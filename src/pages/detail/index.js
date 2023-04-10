@@ -1,12 +1,19 @@
-import {useLayoutEffect} from 'react';
-import {View, Text, StyleSheet, Pressable, ScrollView, Image} from 'react-native';
+import {useLayoutEffect, useState} from 'react';
+import {View, Text, StyleSheet, Pressable, ScrollView, Image, Modal, Share} from 'react-native';
 import {useRoute, useNavigation} from '@react-navigation/native';
 import {Entypo, AntDesign, Feather} from '@expo/vector-icons';
+
+import {VideoView}  from '../../component/video';
+
+import {Ingredients} from '../../component/ingredients';
+import {Instructions} from '../../component/instructions';
 
 export function Detail(){
 
     const route = useRoute();
     const navigation = useNavigation();
+
+    const [showVideo, setShowVideo] = useState(false);
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -25,9 +32,25 @@ export function Detail(){
 
     }, [navigation, route.params?.data])
 
+
+    function handleOpenvideo(){
+        setShowVideo=(true);
+    }
+
+     async function shareReceipe(){
+        try{
+            await Share.share({
+                url: "http://google.com.br",
+                message: `Receita: ${route.params?.data.name}`
+            })
+        }catch(error){
+            console.log(error);
+        }
+    }
+
     return (
-        <ScrollView style ={styles.container} showsVerticalScrollIndicator={false}>
-           <Pressable>
+        <ScrollView contentContainerStyle={{paddingBottom:14}} style ={styles.container} showsVerticalScrollIndicator={false}>
+           <Pressable onPress={handleOpenvideo}>
                 <View style={styles.playIcon}>
                     <AntDesign name='playcircleo' size={50} color='#FAFAFA' />
                 </View>
@@ -42,10 +65,35 @@ export function Detail(){
                     <Text style={styles.title}>{route.params?.data.name}</Text>
                     <Text style={styles.ingredientsText}>ingredientes({route.params?.data.total_ingredients})</Text>
                 </View>
-                <Pressable>
+                <Pressable onPress={shareReceipe}>
                 <Feather name='share-2' size={24} color='#121212'/>
             </Pressable>
             </View>
+
+            {route.params?.data.ingredients.map((item) => (
+                 <Ingredients key={item.id} data={item} />
+            ))} 
+            
+            <View style = {styles.instructionsArea}>
+                <Text style = {styles.instructionsText}>Modo de preparo</Text>
+                <Feather 
+                    name='arrow-down'
+                    size={24}
+                    color='#FFF'
+                />
+            </View>
+
+            {route.params?.data.instructions.map((item, index) => (
+                <Instructions key={item.id} data={item} index={index} />
+            ))}
+
+            <Modal visible= {showVideo} animationType='slide'>
+                <VideoView 
+                    handleClose = {() => setShowVideo(false)}
+                    videoUrl = {route.params?.data.video}
+                />
+            </Modal>
+
         </ScrollView>
     )
 }
@@ -90,5 +138,19 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 14,
+    }, 
+    instructionsArea:{
+        backgroundColor: "#4cbe6c",
+        flexDirection: 'row',
+
+        padding: 8,
+        borderRadius: 4,
+        marginBottom: 14,
+    }, 
+    instructionsText:{
+        fontSize: 18,
+        fontWeight: 500,
+        color: "#FFF",
+        marginRight: 8,
     }
 })
